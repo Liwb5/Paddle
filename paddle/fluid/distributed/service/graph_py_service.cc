@@ -321,5 +321,12 @@ std::vector<FeatureNode> GraphPyClient::pull_graph_list(std::string name,
   }
   return res;
 }
+
+void GraphPyClient::stop_server() {
+    VLOG(0) << "going to stop server";
+    auto status = this->worker_ptr->stop_server();
+    status.wait();
+}
+
 }
 }
