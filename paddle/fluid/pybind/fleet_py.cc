@@ -27,6 +27,7 @@ limitations under the License. */
 #include <memory>
 #include <string>
 #include <vector>
+// #include <cuda_runtime.h>
 
 #include "paddle/fluid/distributed/index_dataset/index_sampler.h"
 #include "paddle/fluid/distributed/index_dataset/index_wrapper.h"
@@ -38,6 +39,13 @@ limitations under the License. */
 #include "paddle/fluid/distributed/ps/service/ps_service/graph_py_service.h"
 #include "paddle/fluid/distributed/ps/wrapper/fleet.h"
 
+#include "paddle/fluid/framework/fleet/heter_ps/feature_value.h"
+#include "paddle/fluid/framework/fleet/heter_ps/graph_gpu_ps_table.h"
+#include "paddle/fluid/framework/fleet/heter_ps/heter_comm.h"
+#include "paddle/fluid/framework/fleet/heter_ps/heter_resource.h"
+#include "paddle/fluid/framework/fleet/heter_ps/optimizer.cuh.h"
+#include "paddle/fluid/platform/cuda_device_guard.h"
+
 namespace py = pybind11;
 using paddle::distributed::CommContext;
 using paddle::distributed::Communicator;
@@ -48,6 +56,8 @@ using paddle::distributed::GraphNode;
 using paddle::distributed::GraphPyServer;
 using paddle::distributed::GraphPyClient;
 using paddle::distributed::FeatureNode;
+// using paddle::framework::GpuPsGraphTable;
+// using paddle::framework::HeterPsResource;
 
 namespace paddle {
 namespace pybind {
@@ -247,6 +257,67 @@ void BindGraphPyClient(py::module* m) {
            })
       .def("bind_local_server", &GraphPyClient::bind_local_server);
 }
+
+// void BindGPUGraphTable(py::module* m) {
+//   py::class_<GpuPsGraphTable>(*m, "GpuPsGraphTable")
+//       .def("__init__", [](GpuPsGraphTable &instance, std::vector<int> device_id_mapping2){
+//           // int gpu_num = device_id_mapping.size();
+//
+//           std::vector<int> device_id_mapping;
+//           for (int i = 0; i < 2; i++) device_id_mapping.push_back(i);
+//           std::shared_ptr<HeterPsResource> resource =
+//               std::make_shared<HeterPsResource>(device_id_mapping);
+//           resource->enable_p2p();
+//           int use_nv = 1;
+//           new (&instance) GpuPsGraphTable(resource, use_nv);
+//         })
+//       .def("init_cpu_table",
+//               [](GpuPsGraphTable& self) {
+//                   ::paddle::distributed::GraphParameter table_proto;
+//                   table_proto.set_shard_num(24);
+//                   self.init_cpu_table(table_proto);
+//         });
+      // .def("load",
+      //         [](GpuPsGraphTable& self) {
+      //             std::vector<paddle::framework::GpuPsCommGraph> vec;
+      //             int n = 10;
+      //             std::vector<int64_t> ids0, ids1;
+      //             for (int i = 0; i < n; i++) {
+      //               self.cpu_graph_table->add_comm_edge(i, (i + 1) % n);
+      //               self.cpu_graph_table->add_comm_edge(i, (i - 1 + n) % n);
+      //               if (i % 2 == 0) ids0.push_back(i);
+      //             }
+      //             self.cpu_graph_table->build_sampler();
+      //             ids1.push_back(5);
+      //             vec.push_back(self.cpu_graph_table->make_gpu_ps_graph(ids0));
+      //             vec.push_back(self.cpu_graph_table->make_gpu_ps_graph(ids1));
+      //             vec[0].display_on_cpu();
+      //             vec[1].display_on_cpu();
+      //             self.build_graph_from_cpu(vec);
+      //         })
+      // // .def("sample_neighboors", &GraphPyClient::batch_sample_neighbors)
+      // .def("sample_neighboors", [](GpuPsGraphTable& self, std::vector<int> nodes) {
+      //             int64_t cpu_key[3] = {0, 1, 2};
+      //             void *key;
+      //             platform::CUDADeviceGuard guard(0);
+      //             cudaMalloc((void **)&key, 3 * sizeof(int64_t));
+      //             cudaMemcpy(key, cpu_key, 3 * sizeof(int64_t), cudaMemcpyHostToDevice);
+      //             // auto neighbor_sample_res = g.graph_neighbor_sample(0, (int64_t *)key, 2,
+      //             // 3);
+      //             auto neighbor_sample_res =
+      //                 self.graph_neighbor_sample_v2(0, (int64_t *)key, 2, 3, true);
+      //             int64_t *res = new int64_t[7];
+      //             cudaMemcpy(res, neighbor_sample_res->val, 3 * 2 * sizeof(int64_t),
+      //                        cudaMemcpyDeviceToHost);
+      //             int *actual_sample_size = new int[3];
+      //             cudaMemcpy(actual_sample_size, neighbor_sample_res->actual_sample_size,
+      //                        3 * sizeof(int),
+      //                        cudaMemcpyDeviceToHost);  // 3, 1, 3
+      //
+      //             return actual_sample_size;
+      //         });
+// }
+
 
 using paddle::distributed::TreeIndex;
 using paddle::distributed::IndexWrapper;
